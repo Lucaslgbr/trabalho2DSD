@@ -18,6 +18,7 @@ public class SimulacaoView extends JFrame {
     private JTextField carrosNaMalha;
     //Demais parametros
     private SimulacaoParametros simulacaoParametros;
+    private final SimulacaoController simulacaoController;
 
     public SimulacaoView(SimulacaoParametros simulacaoParametros) {
         //Simulação Parametros
@@ -28,8 +29,8 @@ public class SimulacaoView extends JFrame {
         this.renderizaMalhaTable();
         //Após tudo criado exibe a tela pronta
         super.setVisible(true);
-        SimulacaoController simulacaoController = new SimulacaoController(simulacaoParametros, this);
-        simulacaoController.start();
+        this.simulacaoController = new SimulacaoController(simulacaoParametros, this);
+        this.simulacaoController.start();
     }
 
     private void formatarView() {
@@ -38,6 +39,8 @@ public class SimulacaoView extends JFrame {
         super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         super.setContentPane(this.containerPanel);
         encerrarButton.addActionListener((ActionEvent e) -> {
+            //Encerra a thread
+            this.simulacaoController.encerrar();
             //Cria a tela de menu
             new MenuView();
             //Fecha a tela atual de simulacao

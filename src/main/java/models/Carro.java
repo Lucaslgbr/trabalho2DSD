@@ -13,6 +13,7 @@ public class Carro extends Thread {
     private final Random random = new Random();
     private final int velocidade;
     private Estrada estradaAtual;
+    private boolean encerrado = false;
 
     public Carro(SimulacaoController simulacaoController) {
         this.simulacaoController = simulacaoController;
@@ -23,36 +24,58 @@ public class Carro extends Thread {
         this.estradaAtual = null;
     }
 
+    public void encerrar() {
+        this.encerrado = true;
+        this.interrupt();
+    }
+
     @Override
     public void run() {
-        while (!percurso.isEmpty()) {
-            int proximaExtradaIndex = 0;
-            if (percurso.get(proximaExtradaIndex).isCruzamento()) {
-                //Se for um cruzamento precisamos saber para que lado ir
-                resolverCruzamento();
-            } else {
-                //Se for sóu ma estrada apenas move o veiculo
-                Estrada estrada = this.percurso.remove(proximaExtradaIndex);
-                this.mover(estrada, true);
+        while (!this.encerrado) {
+            while (!percurso.isEmpty()) {
+                int proximaExtradaIndex = 0;
+                if (percurso.get(proximaExtradaIndex).isCruzamento()) {
+                    //Se for um cruzamento precisamos saber para que lado ir
+                    resolverCruzamento();
+                } else {
+                    //Se for sóu ma estrada apenas move o veiculo
+                    Estrada estrada = this.percurso.remove(proximaExtradaIndex);
+                    this.mover(estrada, true);
+                }
             }
+            //Chegou ao fim do percurso?
+            // - Remove o carro
+            this.getEstradaAtual().removerCarro();
+            // - Libera a estrada
+            this.getEstradaAtual().release();
+            // - Tira da malha pois saiu da tela
+            this.simulacaoController.removeCarroNaMalha(this);
+            // - Atualização gráfica
+            this.simulacaoController.atualizarCelula(this.getEstradaAtual());
+            // - Fim da thread
+            this.encerrar();
         }
-        //Chegou ao fim do percurso?
-        // - Remove o carro
-        this.getEstradaAtual().removerCarro();
-        // - Libera a estrada
-        this.getEstradaAtual().release();
-        // - Tira da malha pois saiu da tela
-        this.simulacaoController.removeCarroNaMalha(this);
-        // - Atualização gráfica
-        this.simulacaoController.atualizarCelula(this.getEstradaAtual());
-        // - Fim da thread
-        this.interrupt();
     }
 
     private void resolverCruzamento() {
         this.delay();
+        ArrayList<Estrada> cruzamentosReservar = this.loadCruzamentosNecessariosMovimento();
+        ArrayList<Estrada> cruzamentosReservados = this.tentaReservarCruzamentos(cruzamentosReservar);
+        //Tem todos os cruzamentos para passar?
+        if (cruzamentosReservados.size() == cruzamentosReservar.size()) {
+            //Move pelo cruzamento
+            for (Estrada cruzamentoReservado : cruzamentosReservados) {
+                this.percurso.remove(cruzamentoReservado);
+                this.mover(cruzamentoReservado, false);
+            }
+        }
+    }
+
+    /**
+     * @return Os cruzamentos necessários para conseguir movimentar
+     */
+    private ArrayList<Estrada> loadCruzamentosNecessariosMovimento() {
         ArrayList<Estrada> cruzamentosReservar = new ArrayList<>();
-        ArrayList<Estrada> cruzamentosReservados = new ArrayList<>();
         for (int i = 0; i < this.percurso.size(); i++) {
             Estrada estrada = this.percurso.get(i);
             cruzamentosReservar.add(estrada);
@@ -60,38 +83,44 @@ public class Carro extends Thread {
                 break;
             }
         }
-        for (Estrada crossroadToAcquire : cruzamentosReservar) {
-            if (crossroadToAcquire.tryAcquire()) {
-                cruzamentosReservados.add(crossroadToAcquire);
+        return cruzamentosReservar;
+    }
+
+    /**
+     * @return Todos os cruzamentos que foram possivel realizar a reserva
+     */
+    private ArrayList<Estrada> tentaReservarCruzamentos(ArrayList<Estrada> cruzamentosReservar) {
+        //Tenta reservar todos os cruzamentos necessários
+        ArrayList<Estrada> cruzamentosReservados = new ArrayList<>();
+        for (Estrada cruzamentoTentaReservar : cruzamentosReservar) {
+            if (cruzamentoTentaReservar.tryAcquire()) {
+                cruzamentosReservados.add(cruzamentoTentaReservar);
             } else {
-                //Não conseguiu reserver todos os cruzamentos para passar?
-                for (Estrada acquiredEstrada : cruzamentosReservados) {
-                    //Libera todos
-                    acquiredEstrada.release();
-                }
+                //Não conseguiu reservar todos os cruzamentos para passar?
+                //Vamos liberar os que tinhamos conseguidos reservar
+                this.liberarEstradaList(cruzamentosReservados);
                 break;
             }
         }
-        //Tem todos os cruzamentos para passar?
-        if (cruzamentosReservados.size() == cruzamentosReservar.size()) {
-            //Move pelo cruzamento
-            for (Estrada acquiredCrossroad : cruzamentosReservados) {
-                this.percurso.remove(acquiredCrossroad);
-                this.mover(acquiredCrossroad, false);
-            }
+        return cruzamentosReservados;
+    }
+
+    private void liberarEstradaList(ArrayList<Estrada> estradas) {
+        for (Estrada estrada : estradas) {
+            estrada.release();
         }
     }
 
-    private void mover(Estrada proximaEstrada, Boolean needsAcquire) {
+    private void mover(Estrada proximaEstrada, boolean reservar) {
         if (proximaEstrada.isVazio()) {
-            boolean acquired = false;
-            if (needsAcquire) {
+            boolean reservado = false;
+            if (reservar) {
                 do {
                     //Tenta "reservar/adquirir" a estrada
                     if (proximaEstrada.tryAcquire()) {
-                        acquired = true;
+                        reservado = true;
                     }
-                } while (!acquired);
+                } while (!reservado);
             }
             //Somente quando conseguiu a estrada, adiciona o carro na posição
             proximaEstrada.adicionarCarro(this);
@@ -226,6 +255,8 @@ public class Carro extends Thread {
             //Tempo de espera a cada movimento para definir a velocidade de cada carro
             Thread.sleep(this.velocidade);
         } catch (InterruptedException e) {
+            //Nada, só encerrou a execução
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

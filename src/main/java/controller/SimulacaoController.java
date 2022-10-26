@@ -16,6 +16,7 @@ public class SimulacaoController extends Thread {
     private final ArrayList<Carro> carrosNaMalha;
     private final SimulacaoParametros simulacaoParametros;
     private final SimulacaoView simulacaoView;
+    private boolean encerrado = false;
 
     public SimulacaoController(SimulacaoParametros simulacaoParametros, SimulacaoView simulacaoView) {
         this.simulacaoParametros = simulacaoParametros;
@@ -24,9 +25,22 @@ public class SimulacaoController extends Thread {
         this.carrosEmFila = this.loadCarros();
     }
 
+    public void encerrar() {
+        this.encerrado = true;
+        for (Carro carroFila : this.carrosEmFila) {
+            carroFila.encerrar();
+        }
+        for (Carro carroMalha : this.carrosNaMalha) {
+            carroMalha.encerrar();
+        }
+        this.interrupt();
+    }
+
     @Override
     public void run() {
-        this.executaFila();
+        while (!this.encerrado) {
+            this.executaFila();
+        }
     }
 
     private void executaFila() {
@@ -48,6 +62,8 @@ public class SimulacaoController extends Thread {
                             //Manda ele rodar
                             carro.start();
                             this.sleepProximoCarro();
+                        } catch (InterruptedException e) {
+                            //Nada, só encerrou a execução
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -110,8 +126,9 @@ public class SimulacaoController extends Thread {
 
     public void removeCarroNaMalha(Carro carro) {
         this.getCarrosNaMalha().remove(carro);
-        if (this.getCarrosNaMalha().isEmpty() && this.getCarrosEmFila().isEmpty()) {
-            this.getSimulacaoView().getEncerrarButton().setText("Reiniciar");
+        if (this.getCarrosNaMalha().isEmpty() && this.getCarrosEmFila().isEmpty() && !this.encerrado) {
+            this.encerrar();
+            this.getSimulacaoView().getEncerrarButton().setText("Voltar ao Menu");
             JOptionPane.showMessageDialog(this.getSimulacaoView(), "Todos os carros percorreram a malha, simulação finalizada.");
         }
     }
