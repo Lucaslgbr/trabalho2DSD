@@ -21,7 +21,7 @@ public class Carro extends Thread {
         this.percurso = new ArrayList<>();
         this.malhaPista = simulacaoController.getMalhaPista();
         //Define uma velocidade aleatoria
-        this.velocidade = random.nextInt(2) + 20;
+        this.velocidade = random.nextInt(100) + 200;
         this.tipo = random.nextInt(6)+1;
         this.estradaAtual = null;
     }
