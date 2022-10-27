@@ -94,7 +94,7 @@ public class SimulacaoController extends Thread {
     }
 
     public Estrada[][] getMalhaPista() {
-        return this.getMalhaTable().getMatrix();
+        return this.getMalhaTable().getMalha();
     }
 
     public MalhaTable getMalhaTable() {

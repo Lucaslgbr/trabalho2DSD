@@ -16,7 +16,7 @@ public class MalhaTable extends AbstractTableModel {
 
     private int lines;
     private int columns;
-    private Estrada matrix[][];
+    private Estrada malha[][];
 
     private SimulacaoParametros simulacaoParametros;
 
@@ -26,30 +26,30 @@ public class MalhaTable extends AbstractTableModel {
     }
 
     public void criarMatriz() {
-        Scanner meshScanner = null;
+        Scanner scanner = null;
         try {
             //Cria uma instancia do arquivo pelo nome
             File arquivoMalha = new File(FILES_PATH + this.simulacaoParametros.getNomeArquivoMalha());
-            meshScanner = new Scanner(arquivoMalha);
+            scanner = new Scanner(arquivoMalha);
             //Enquanto tiver valores continua lendo
-            while (meshScanner.hasNextInt()) {
+            while (scanner.hasNextInt()) {
                 //Primeira linha é a quantidade de linhas
-                this.setLines(meshScanner.nextInt());
+                this.setLines(scanner.nextInt());
                 //Segunda linha é a quantidade de colunas
-                this.setColumns(meshScanner.nextInt());
+                this.setColumns(scanner.nextInt());
                 //Cria uma matriz que representa a malha com os tamanhos fornecidos
-                this.matrix = new Estrada[this.columns][this.lines];
+                this.malha = new Estrada[this.columns][this.lines];
                 //Percorre cada uma das linhas do arquivo
                 for (int linha = 0; linha < this.lines; linha++) {
                     for (int coluna = 0; coluna < this.columns; coluna++) {
                         //Cada valor inteiro do arquivo representa uma celula da malha e é
                         //representada por um valor que indica sua direção
-                        int direcao = meshScanner.nextInt();
-                        Estrada cell = new Estrada(coluna, linha, direcao);
-                        if (cell.isEstrada()) {
-                            cell.definirEntradaOuSaida(this);
+                        int direcao = scanner.nextInt();
+                        Estrada estrada = new Estrada(coluna, linha, direcao);
+                        if (estrada.isEstrada()) {
+                            estrada.definirEntradaOuSaida(this);
                         }
-                        this.matrix[coluna][linha] = cell;
+                        this.malha[coluna][linha] = estrada;
                     }
                 }
             }
@@ -57,7 +57,7 @@ public class MalhaTable extends AbstractTableModel {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } finally {
-            meshScanner.close();
+            scanner.close();
         }
     }
 
@@ -73,7 +73,7 @@ public class MalhaTable extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        return new ImageIcon(this.matrix[columnIndex][rowIndex].getIconeDiretorio());
+        return new ImageIcon(this.malha[columnIndex][rowIndex].getIconeDiretorio());
     }
 
     public int getLines() {
@@ -92,12 +92,12 @@ public class MalhaTable extends AbstractTableModel {
         this.columns = columns;
     }
 
-    public Estrada[][] getMatrix() {
-        return matrix;
+    public Estrada[][] getMalha() {
+        return malha;
     }
 
-    public void setMatrix(Estrada[][] matrix) {
-        this.matrix = matrix;
+    public void setMalha(Estrada[][] malha) {
+        this.malha = malha;
     }
 
     public SimulacaoParametros getSimulacaoParametros() {
