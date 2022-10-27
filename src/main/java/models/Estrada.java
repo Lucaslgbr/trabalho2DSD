@@ -162,7 +162,7 @@ public class Estrada {
     }
 
     public void setIconeDiretorioCarro() {
-        this.setIconeDiretorio(ICONS_PATH + "carro.png");
+        this.setIconeDiretorio(ICONS_PATH + "veiculo" + this.carro.getTipo() + ".png");
     }
 
 }

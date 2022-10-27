@@ -15,12 +15,17 @@ public class Carro extends Thread {
     private Estrada estradaAtual;
     private boolean encerrado = false;
 
+
+
+    private int tipo;
+
     public Carro(SimulacaoController simulacaoController) {
         this.simulacaoController = simulacaoController;
         this.percurso = new ArrayList<>();
         this.malhaPista = simulacaoController.getMalhaPista();
         //Define uma velocidade aleatoria
         this.velocidade = random.nextInt(100) + 200;
+        this.tipo = random.nextInt(3)+1;
         this.estradaAtual = null;
     }
 
@@ -241,7 +246,9 @@ public class Carro extends Thread {
                 throw new Exception("Erro na montagem da malha");
         }
     }
-
+    public int getTipo() {
+        return tipo;
+    }
     public Estrada getEstradaAtual() {
         return estradaAtual;
     }
