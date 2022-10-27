@@ -149,8 +149,8 @@ public class Carro extends Thread {
         int cruzamentosEncontrados = 0;
         while (!saidaEncontrada) {
             int direcao = proximaEstrada.getTipo();
-            boolean isRoad = direcao <= 4;
-            if (isRoad) {
+            boolean estradaDirecaoUnica = direcao <= 4;
+            if (estradaDirecaoUnica) {
                 proximaEstrada = this.escolherEstradaPorDirecao(direcao, proximaEstrada.getLinha(), proximaEstrada.getColuna());
             } else {
                 proximaEstrada = this.escolherCruzamentoPorDirecao(direcao, proximaEstrada.getLinha(), proximaEstrada.getColuna(), cruzamentosEncontrados);
